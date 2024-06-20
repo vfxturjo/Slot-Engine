@@ -15,6 +15,7 @@
 			['T_Sarah', 'T_sarah@gmail.com', 'T_(01) 22 888 4444'],
 			['T_Afshin', 'T_afshin@mail.com', 'T_(353) 22 87 8356']
 		]),
+		editable = true,
 		debug_data = false
 	} = $props();
 
@@ -42,57 +43,56 @@
 			</tr>
 		</thead>
 
-		<tbody>
-			{#each data as row, rowIndex}
-				<tr
-					class="border-b bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-600"
-				>
-					{#each row as cell, cellIndex}
-						<!-- ADD THE OVERVIEW NAME HERE -->
-						<!-- <td
-							class="whitespace-nowrap px-6 py-4 font-medium text-gray-900 dark:text-white"
-							contenteditable="plaintext-only"
-							bind:innerHTML={row[cellIndex]}
-						>
-						</td> -->
-						{#if cellIndex < 1}
-							<td class="px-6 py-4 hover:cursor-default">
-								{row[1] + ' ' + row[2] + "'" + row[3]}
-							</td>
-						{:else}
+		{#if editable}
+			<!-- IF TABLE IS EDITABLE -->
+			<tbody>
+				{#each data as row, rowIndex}
+					<tr
+						class="border-b bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-600"
+					>
+						{#each row as cell, cellIndex}
 							<td
 								class="px-6 py-4"
 								contenteditable="plaintext-only"
 								bind:innerHTML={row[cellIndex]}
 							>
 							</td>
-						{/if}
+						{/each}
+						<td>
+							<button
+								class="font-medium text-blue-600 hover:underline dark:text-blue-500"
+								onclick={() => deleteRow(row)}>X</button
+							>
+						</td>
+					</tr>
+				{/each}
+				<tr style="color: grey">
+					{#each newRow as column, index}
+						<td class="px-6 py-4" contenteditable="plaintext-only" bind:innerHTML={newRow[index]}
+						></td>
 					{/each}
 					<td>
 						<button
 							class="font-medium text-blue-600 hover:underline dark:text-blue-500"
-							onclick={() => deleteRow(row)}>X</button
+							onclick={addRow}>+</button
 						>
 					</td>
 				</tr>
-			{/each}
-			<tr style="color: grey">
-				{#each newRow as column, index}
-					{#if index < 1}
-						<td class="hover:cursor-default">Add new</td>
-					{:else}
-						<td class="px-6 py-4" contenteditable="plaintext-only" bind:innerHTML={newRow[index]}
-						></td>
-					{/if}
-				{/each}
-				<td>
-					<button
-						class="font-medium text-blue-600 hover:underline dark:text-blue-500"
-						onclick={addRow}>+</button
+			</tbody>
+		{:else}
+			<!-- IF TABLE IS NOT EDITABLE -->
+			<tbody>
+				{#each data as row, rowIndex}
+					<tr
+						class="border-b bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-600"
 					>
-				</td>
-			</tr>
-		</tbody>
+						{#each row as cell, cellIndex}
+							<td class="px-6 py-4">{row[cellIndex]} </td>
+						{/each}
+					</tr>
+				{/each}
+			</tbody>
+		{/if}
 	</table>
 </div>
 {#if debug_data}
