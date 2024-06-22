@@ -51,11 +51,26 @@ export const slotsData_defaultColumns = [
 	'Instruments',
 	'Performers'
 ];
-export const slotsData_SlotInfos = [
+
+export type SlotInfosRow = [string, string, string, string, string, number[], number[]][];
+
+export const slotsData_SlotInfos: SlotInfosRow = [
 	['1', 'Amar Shonar Bangla', 'Song', '', '5', [], []],
 	['2', 'Purbo digonte shurjo utheche', 'Dance', '5', '3', [], []],
 	['3', 'Kajla Didi', 'Poem', '3', '3', [], []],
 	['4', 'GTA 5 Real-life', 'Slide', '5', '7', [], []]
+];
+export const slotsData_test_SlotInfos: SlotInfosRow = [
+	['1', 'Amar Shonar Bangla', 'Song', '', '5', [], []],
+	['2', 'Purbo digonte shurjo utheche', 'Dance', '5', '3', [], []],
+	['3', 'Kajla Didi', 'Poem', '3', '3', [], []],
+	['4', 'GTA 5 Real-life', 'Slide', '5', '7', [], []],
+	['5', 'GTA 5 Real-life', 'Slide', '5', '7', [], []],
+	['6', 'GTA 5 Real-life', 'Slide', '5', '7', [], []],
+	['7', 'GTA 5 Real-life', 'Slide', '5', '7', [], []],
+	['8', 'GTA 5 Real-life', 'Slide', '5', '7', [], []],
+	['9', 'GTA 5 Real-life', 'Slide', '5', '7', [], []],
+	['10', 'GTA 5 Real-life', 'Slide', '5', '7', [], []]
 ];
 
 //#endregion

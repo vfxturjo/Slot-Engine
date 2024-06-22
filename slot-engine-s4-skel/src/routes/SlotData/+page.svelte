@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { get } from 'svelte/store';
 	import { persisted } from 'svelte-persisted-store';
 	import UsingTable from '../../lib/Components/using table.svelte';
 	import convertArrayToCSV from 'convert-array-to-csv';
@@ -12,21 +13,21 @@
 		slotsData_defaultColumns,
 		slotsData_SlotInfos,
 		// testing
-		pepsData_test_Aliases,
-		pepsData_test_PepInfos
+		slotsData_test_SlotInfos
 	} from '../../lib/Defaults/defaultValues';
 
 	let columns = persisted('slotsData-columns', slotsData_defaultColumns);
-	let data = persisted('slotsData-pepInfos', slotsData_SlotInfos);
+	let temp_data = persisted('slotsData-slotInfos_temp', slotsData_SlotInfos);
+	let data = persisted('slotsData-slotInfos', slotsData_SlotInfos);
 
 	$: conflicting_IDs = findDuplicateFromList(
-		$data.map((row) => {
+		$temp_data.map((row) => {
 			return row[0];
 		})
 	);
 
 	$: highestID = Math.max(
-		...$data.map((row) => {
+		...$temp_data.map((row) => {
 			return parseInt(row[0]);
 		})
 	);
@@ -37,13 +38,13 @@
 		handleFileInputCSV(files).then((text) => {
 			let [columns_imported, data_imported] = ConvertCSVToArrayOfArrays(text, ',');
 			// $columns = columns_imported;
-			$data = data_imported;
+			$temp_data = data_imported;
 		});
 	}
 
 	function exportData() {
 		donwloadBlob(
-			convertArrayToCSV($data, {
+			convertArrayToCSV($temp_data, {
 				header: $columns,
 				seperator: ','
 			}),
@@ -69,13 +70,13 @@
 		editable={true}
 		newColumnData={[String(highestID + 1), ...$columns.slice(1)]}
 		bind:columns={$columns}
-		bind:data={$data}
+		bind:data={$temp_data}
 	/>
 </div>
 
-{#if conflicting_alias_IDs.length != 0}
+{#if conflicting_IDs.length != 0}
 	<div class="bg-red-800 text-yellow-300">
-		Conflicting Alias IDs: {conflicting_alias_IDs}
+		Conflicting Alias IDs: {conflicting_IDs}
 	</div>
 {/if}
 
@@ -83,7 +84,7 @@
 	<button
 		class="btn variant-filled-primary"
 		on:click={() => {
-			aliasData.set(aliasData_temp);
+			data.set(get(temp_data));
 		}}
 	>
 		SAVE to storage
@@ -94,8 +95,7 @@
 			class="btn variant-filled-warning"
 			data-sveltekit-reload
 			on:click={() => {
-				$data = pepsData_test_PepInfos;
-				aliasData.set(pepsData_test_Aliases);
+				$temp_data = slotsData_test_SlotInfos;
 			}}
 		>
 			Load Test Data
@@ -106,8 +106,7 @@
 			data-sveltekit-reload
 			on:click={() => {
 				window.localStorage.clear();
-				$data = slotsData_SlotInfos;
-				$aliasData = pepsData_defaultAliases;
+				$temp_data = slotsData_SlotInfos;
 			}}
 		>
 			Reset Everything
