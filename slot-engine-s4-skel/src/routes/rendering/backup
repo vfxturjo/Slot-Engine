@@ -1,0 +1,91 @@
+<script lang="ts">
+	import Matter, { Runner } from 'matter-js';
+	import { fabric } from 'fabric';
+	import { onMount } from 'svelte';
+	import { run } from 'node:test';
+
+	let canvas: HTMLCanvasElement;
+	let engine;
+	let world;
+	let fabricCanvas;
+
+	onMount(() => {
+		// Set up Matter.js
+		engine = Matter.Engine.create();
+		world = engine.world;
+
+		// Set up Fabric.js canvas
+		fabricCanvas = new fabric.Canvas(canvas, {
+			width: 800,
+			height: 600,
+		});
+
+		// Create ground
+		const ground = Matter.Bodies.rectangle(400, 590, 800, 20, { isStatic: true });
+		Matter.World.add(world, ground);
+
+		// Render ground
+		const fabricGround = new fabric.Rect({
+			width: 800,
+			height: 20,
+			left: 0,
+			top: 580,
+			fill: 'brown',
+			selectable: false
+		});
+		fabricCanvas.add(fabricGround);
+
+		// Start the engine
+		var runner = Runner.create();
+		runner.run(runner, engine);
+		// Matter.Runner.run(engine);
+
+		// Update Fabric.js canvas
+		function updateCanvas() {
+			fabricCanvas.clear();
+			fabricCanvas.add(fabricGround);
+
+			world.bodies.forEach((body) => {
+				if (body.label === 'Circle') {
+					const fabricCircle = new fabric.Circle({
+						left: body.position.x,
+						top: body.position.y,
+						radius: body.circleRadius,
+						fill: body.render.fillStyle,
+						selectable: false
+					});
+					fabricCanvas.add(fabricCircle);
+				}
+			});
+
+			fabricCanvas.renderAll();
+			requestAnimationFrame(updateCanvas);
+		}
+
+		updateCanvas();
+	});
+
+	function addNewCircle() {
+		const radius = 20 + Math.random() * 30;
+		const circle = Matter.Bodies.circle(Math.random() * 700 + 50, 50, radius, {
+			restitution: 0.5,
+			label: 'Circle',
+			render: {
+				fillStyle: `rgb(${Math.random() * 255},${Math.random() * 255},${Math.random() * 255})`
+			}
+		});
+		Matter.World.add(world, circle);
+	}
+</script>
+
+<canvas bind:this={canvas}></canvas>
+<button on:click={addNewCircle}>Add new circle</button>
+
+<style>
+	canvas {
+		border: 1px solid black;
+	}
+	button {
+		margin-top: 10px;
+	}
+</style>

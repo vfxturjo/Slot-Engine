@@ -1,24 +1,29 @@
 <script lang="ts">
 	import { get } from 'svelte/store';
 	import { persisted } from 'svelte-persisted-store';
-	import UsingTable from '../../lib/Components/using table.svelte';
+	import TablewithmultiSelect from '$lib/Components/table with multiSelect.svelte';
 	import convertArrayToCSV from 'convert-array-to-csv';
-	import { donwloadBlob } from '$lib/usefulFuncs';
+	import { donwloadBlob, remove_localStorage_items_with_prefix } from '$lib/usefulFuncs';
 	import {
 		ConvertCSVToArrayOfArrays,
 		findDuplicateFromList,
-		handleFileInputCSV
+		handleFileInputAsText
 	} from '$lib/usefulFuncs';
 	import {
 		slotsData_defaultColumns,
-		slotsData_SlotInfos,
+		slotsData_defaultColumns_types,
+		slotsData_default_SlotInfos,
+		slotsData_newRow,
+		Instruments_list,
 		// testing
-		slotsData_test_SlotInfos
+		slotsData_test_SlotInfos,
+		Performance_types
 	} from '../../lib/Defaults/defaultValues';
 
 	let columns = persisted('slotsData-columns', slotsData_defaultColumns);
-	let temp_data = persisted('slotsData-slotInfos_temp', slotsData_SlotInfos);
-	let data = persisted('slotsData-slotInfos', slotsData_SlotInfos);
+	let columns_types = persisted('slotsData-columnsTypes', slotsData_defaultColumns_types);
+	let temp_data = persisted('slotsData-slotInfos_temp', slotsData_default_SlotInfos);
+	let data = persisted('slotsData-slotInfos', slotsData_default_SlotInfos);
 
 	$: conflicting_IDs = findDuplicateFromList(
 		$temp_data.map((row) => {
@@ -35,41 +40,45 @@
 	// IMPORT AND EXPORT DATA
 	let files: FileList;
 	$: if (files) {
-		handleFileInputCSV(files).then((text) => {
-			let [columns_imported, data_imported] = ConvertCSVToArrayOfArrays(text, ',');
-			// $columns = columns_imported;
+		handleFileInputAsText(files).then((text) => {
+			let [columns_imported, ...data_imported] = JSON.parse(text);
 			$temp_data = data_imported;
 		});
 	}
 
 	function exportData() {
-		donwloadBlob(
-			convertArrayToCSV($temp_data, {
-				header: $columns,
-				seperator: ','
-			}),
-			'people_data.csv'
-		);
+		donwloadBlob(JSON.stringify([$columns, ...$temp_data]), 'slots_data.json');
 	}
 </script>
 
 <div class="py-8"></div>
-<p class="h2 p-2 text-center">Edit Data here</p>
+<p class="h2 p-2 text-center">Slot Info</p>
 
 <div class="p-2">
 	<div
 		class="flex items-center justify-center p-2 w-full [&>*]:px-2 bg-black bg-opacity-10 rounded"
 	>
-		<p>CSV:</p>
-		<input class="input w-60" accept=".csv" type="file" bind:files />
+		<p>JSON:</p>
+		<input class="input w-60" accept=".json" type="file" bind:files />
 		<span> </span>
 		<button class="btn variant-filled" on:click={exportData}> Export </button>
 	</div>
-	<UsingTable
+
+	<TablewithmultiSelect
+		--min-width="850px"
 		class="py-2"
-		editable={true}
-		newColumnData={[String(highestID + 1), ...$columns.slice(1)]}
-		bind:columns={$columns}
+		columns={$columns}
+		columns_types={$columns_types}
+		multiSelect_selectOptions={[
+			null,
+			null,
+			Performance_types,
+			null,
+			null,
+			Instruments_list,
+			Instruments_list
+		]}
+		newColumnData={[String(highestID + 1), ...slotsData_newRow[0].slice(1)]}
 		bind:data={$temp_data}
 	/>
 </div>
@@ -95,6 +104,27 @@
 			class="btn variant-filled-warning"
 			data-sveltekit-reload
 			on:click={() => {
+				console.log($temp_data);
+				console.log(get(data));
+			}}
+		>
+			log
+		</button>
+
+		<button
+			class="btn variant-filled-warning"
+			data-sveltekit-reload
+			on:click={() => {
+				$temp_data = JSON.parse(JSON.stringify(get(data)));
+			}}
+		>
+			Undo Changes
+		</button>
+
+		<button
+			class="btn variant-filled-warning"
+			data-sveltekit-reload
+			on:click={() => {
 				$temp_data = slotsData_test_SlotInfos;
 			}}
 		>
@@ -105,11 +135,11 @@
 			class="btn variant-filled-warning"
 			data-sveltekit-reload
 			on:click={() => {
-				window.localStorage.clear();
-				$temp_data = slotsData_SlotInfos;
+				$temp_data = slotsData_default_SlotInfos;
+				remove_localStorage_items_with_prefix('slotsData');
 			}}
 		>
-			Reset Everything
+			Reset
 		</button>
 	</div>
 </div>

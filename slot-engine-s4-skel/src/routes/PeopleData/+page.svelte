@@ -1,13 +1,13 @@
 <script lang="ts">
+	import TablewithMultiSelect from '$lib/Components/table with multiSelect.svelte';
 	import { persisted } from 'svelte-persisted-store';
 	import { get } from 'svelte/store';
-	import UsingTable from '../../lib/Components/using table.svelte';
 	import convertArrayToCSV from 'convert-array-to-csv';
-	import { donwloadBlob } from '$lib/usefulFuncs';
+	import { donwloadBlob, remove_localStorage_items_with_prefix } from '$lib/usefulFuncs';
 	import {
 		ConvertCSVToArrayOfArrays,
 		findDuplicateFromList,
-		handleFileInputCSV
+		handleFileInputAsText
 	} from '$lib/usefulFuncs';
 	import {
 		pepsData_defaultAliases,
@@ -18,7 +18,7 @@
 		pepsData_test_PepInfos
 	} from '../../lib/Defaults/defaultValues';
 
-	let columns = persisted('pepsData-columns', pepsData_defaultColumns);
+	let columns = pepsData_defaultColumns;
 	let data = persisted('pepsData-pepInfos', pepsData_pepInfos);
 	let temp_data = persisted('pepsData-pepInfos_temp', pepsData_pepInfos);
 
@@ -44,9 +44,8 @@
 	// IMPORT AND EXPORT DATA
 	let files: FileList;
 	$: if (files) {
-		handleFileInputCSV(files).then((text) => {
+		handleFileInputAsText(files).then((text) => {
 			let [columns_imported, data_imported] = ConvertCSVToArrayOfArrays(text, ',');
-			// $columns = columns_imported;
 			$temp_data = data_imported;
 		});
 	}
@@ -54,7 +53,7 @@
 	function exportData() {
 		donwloadBlob(
 			convertArrayToCSV($temp_data, {
-				header: $columns,
+				header: columns,
 				seperator: ','
 			}),
 			'people_data.csv'
@@ -62,9 +61,17 @@
 	}
 </script>
 
-<div>
+<div class="flex flex-col align-middle justify-center w-full">
 	<p class="h2 p-2 text-center">Current Aliases</p>
-	<UsingTable editable={false} columns={['ID', 'Alias']} data={$aliasData}></UsingTable>
+	<br />
+	<TablewithMultiSelect
+		--min-width="500px"
+		editable={false}
+		columns={['ID', 'Alias']}
+		data={$aliasData.map((row) => {
+			return [row.value, row.label];
+		})}
+	></TablewithMultiSelect>
 </div>
 
 <div class="py-8"></div>
@@ -79,11 +86,12 @@
 		<span> </span>
 		<button class="btn variant-filled" on:click={exportData}> Export </button>
 	</div>
-	<UsingTable
+	<TablewithMultiSelect
 		class="py-2"
+		columns_types={['string', 'string', 'string', 'string', 'string']}
 		editable={true}
-		newColumnData={[String(highestID + 1), ...$columns.slice(1)]}
-		bind:columns={$columns}
+		newColumnData={[String(highestID + 1), ...columns.slice(1)]}
+		bind:columns
 		bind:data={$temp_data}
 	/>
 </div>
@@ -98,8 +106,13 @@
 	<button
 		class="btn variant-filled-primary"
 		on:click={() => {
-			aliasData.set(temp_aliasData);
+			// aliasData.set(temp_aliasData);
 			data.set(get(temp_data));
+			aliasData.set(
+				temp_aliasData.map((row) => {
+					return { value: row[0], label: row[1] };
+				})
+			);
 		}}
 	>
 		SAVE to storage
@@ -130,8 +143,9 @@
 			class="btn variant-filled-warning"
 			data-sveltekit-reload
 			on:click={() => {
-				window.localStorage.clear();
+				// window.localStorage.clear();
 				$temp_data = pepsData_pepInfos;
+				remove_localStorage_items_with_prefix('pepsData');
 				$aliasData = pepsData_defaultAliases;
 			}}
 		>

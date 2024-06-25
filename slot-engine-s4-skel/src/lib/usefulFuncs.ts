@@ -83,6 +83,22 @@ export function getSequenceArray(length: number) {
 	return filledArray;
 }
 
-export async function handleFileInputCSV(files: FileList) {
+export async function handleFileInputAsText(files: FileList) {
 	return await files[0].text();
+}
+
+export function remove_localStorage_items_with_prefix(prefix: string) {
+	let prefix_len = prefix.length;
+	let arr = []; // Array to hold the keys
+	// Iterate over localStorage and insert the keys that meet the condition into arr
+	for (var i = 0; i < localStorage.length; i++) {
+		if (window.localStorage.key(i).substring(0, prefix_len) == prefix) {
+			arr.push(window.localStorage.key(i));
+		}
+	}
+
+	// Iterate over arr and remove the items by key
+	for (var i = 0; i < arr.length; i++) {
+		window.localStorage.removeItem(arr[i]);
+	}
 }
