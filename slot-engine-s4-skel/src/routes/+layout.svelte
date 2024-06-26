@@ -17,6 +17,7 @@
 				<strong class="text-xl">SlotEngine</strong>
 			</svelte:fragment>
 			<svelte:fragment slot="trail">
+				<!-- <a class="btn btn-sm variant-ghost-surface" href="/knobby">knobby</a> -->
 				<a class="btn btn-sm variant-ghost-surface" href="/rendering">Rendering</a>
 				<a class="btn btn-sm variant-ghost-surface" href="/testingArena">TestingArena</a>
 				<a class="btn btn-sm variant-ghost-surface" href="/PeopleData">PeopleData</a>

@@ -1,4 +1,6 @@
 import Matter from 'matter-js';
+import MatterAttractors from 'matter-attractors';
+import { createStaticGroundBottom } from './classes/sceneSetup';
 let Engine = Matter.Engine,
 	Events = Matter.Events,
 	Runner = Matter.Runner,
@@ -11,7 +13,11 @@ let Engine = Matter.Engine,
 	Composite = Matter.Composite,
 	Composites = Matter.Composites;
 
+Matter.use(MatterAttractors);
+
 export function createMatterScene(engine: Matter.Engine) {
+	createStaticGroundBottom(engine, 800, 600);
+
 	// Create a ground
 	const ground = Matter.Bodies.rectangle(400, 590, 800, 20, {
 		isStatic: true,
@@ -121,4 +127,10 @@ export function createMatterAttractorScene(
 			y: (mouse.position.y - attractiveBody.position.y) * MouseFollowerSpeed
 		});
 	});
+}
+
+export function cleanUpMatter(engine: Matter.Engine) {
+	// Clean up on component unmount
+	Matter.World.clear(engine.world, false);
+	Matter.Engine.clear(engine);
 }

@@ -1,151 +1,50 @@
 <script lang="ts">
-	import { get } from 'svelte/store';
-	import { persisted } from 'svelte-persisted-store';
-	import TablewithmultiSelect from '$lib/Components/table with multiSelect.svelte';
-	import convertArrayToCSV from 'convert-array-to-csv';
-	import { donwloadBlob, remove_localStorage_items_with_prefix } from '$lib/usefulFuncs';
-	import {
-		ConvertCSVToArrayOfArrays,
-		findDuplicateFromList,
-		handleFileInputAsText
-	} from '$lib/usefulFuncs';
-	import {
-		slotsData_defaultColumns,
-		slotsData_defaultColumns_types,
-		slotsData_default_SlotInfos,
-		slotsData_newRow,
-		Instruments_list,
-		// testing
-		slotsData_test_SlotInfos,
-		Performance_types,
-		// alias Data
-		pepsData_defaultAliases
-	} from '../../lib/Defaults/defaultValues';
+	import P5, { type Sketch } from 'p5-svelte';
+	let width = 55;
+	let height = 55;
+	let x = 0;
 
-	let columns = persisted('slotsData-columns', slotsData_defaultColumns);
-	let columns_types = persisted('slotsData-columnsTypes', slotsData_defaultColumns_types);
-	let temp_data = persisted('slotsData-slotInfos_temp', slotsData_default_SlotInfos);
-	let data = persisted('slotsData-slotInfos', slotsData_default_SlotInfos);
-	let pepAliasData = persisted('pepsData-aliases', pepsData_defaultAliases);
-
-	$: conflicting_IDs = findDuplicateFromList(
-		$temp_data.map((row) => {
-			return row[0];
-		})
-	);
-
-	$: highestID = Math.max(
-		...$temp_data.map((row) => {
-			return parseInt(row[0]);
-		})
-	);
-
-	// IMPORT AND EXPORT DATA
-	let files: FileList;
-	$: if (files) {
-		handleFileInputAsText(files).then((text) => {
-			let [columns_imported, ...data_imported] = JSON.parse(text);
-			$temp_data = data_imported;
-		});
+	function velocityXY(p5: P5) {
+		let dx = p5.mouseX - p5.pmouseX;
+		let dy = p5.mouseY - p5.pmouseY;
+		p5.line(x, 25 + dx, x, 25 - dx);
+		p5.line(x, 75 + dy, x, 75 - dy);
 	}
 
-	function exportData() {
-		donwloadBlob(JSON.stringify([$columns, ...$temp_data]), 'slots_data.json');
+	// General mouse velocity
+	function velocity(p5: Sketch['p5']) {
+		let distance = p5.dist(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY);
+		p5.line(x, p5.height / 2 + distance, x, p5.height / 2 - distance);
 	}
+
+	let sketch: Sketch = (p5) => {
+		p5.setup = () => {
+			p5.createCanvas(400, 400);
+		};
+
+		p5.draw = () => {
+			p5.noStroke();
+			p5.fill(255, 10);
+			p5.rect(0, 0, p5.width, p5.height);
+			p5.stroke('red');
+			x = (x + 1) % p5.width;
+			// 0 ? velocity(p5) : velocityXY(p5);
+			0;
+			// p5.ellipse(p5.width / 2, p5.height / 2, width, height);
+		};
+	};
 </script>
 
-<div class="py-8"></div>
-<p class="h2 p-2 text-center">Slot Info</p>
+<label>
+	Width
+	<input type="range" bind:value={width} min="100" max="1000" step="0.01" />
+	{width}
+</label>
 
-<div class="p-2">
-	<div
-		class="flex items-center justify-center p-2 w-full [&>*]:px-2 bg-black bg-opacity-10 rounded"
-	>
-		<p>JSON:</p>
-		<input class="input w-60" accept=".json" type="file" bind:files />
-		<span> </span>
-		<button class="btn variant-filled" on:click={exportData}> Export </button>
-	</div>
+<label>
+	Height
+	<input type="range" bind:value={height} min="100" max="1000" step="0.01" />
+	{height}
+</label>
 
-	<TablewithmultiSelect
-		--min-width="850px"
-		class="py-2"
-		columns={$columns}
-		columns_types={$columns_types}
-		multiSelect_selectOptions={[
-			null,
-			null,
-			Performance_types,
-			null,
-			null,
-			Instruments_list,
-			$pepAliasData
-		]}
-		newColumnData={[String(highestID + 1), ...slotsData_newRow[0].slice(1)]}
-		bind:data={$temp_data}
-	/>
-</div>
-
-{#if conflicting_IDs.length != 0}
-	<div class="bg-red-800 text-yellow-300">
-		Conflicting Alias IDs: {conflicting_IDs}
-	</div>
-{/if}
-
-<div class="flex px-4 py-2 justify-between">
-	<button
-		class="btn variant-filled-primary"
-		on:click={() => {
-			data.set(get(temp_data));
-		}}
-	>
-		SAVE to storage
-	</button>
-
-	<div>
-		<button
-			class="btn variant-filled-warning"
-			data-sveltekit-reload
-			on:click={() => {
-				console.log($temp_data);
-				console.log(get(data));
-			}}
-		>
-			log
-		</button>
-
-		<button
-			class="btn variant-filled-warning"
-			data-sveltekit-reload
-			on:click={() => {
-				$temp_data = JSON.parse(JSON.stringify(get(data)));
-			}}
-		>
-			Undo Changes
-		</button>
-
-		<button
-			class="btn variant-filled-warning"
-			data-sveltekit-reload
-			on:click={() => {
-				$temp_data = slotsData_test_SlotInfos;
-			}}
-		>
-			Load Test Data
-		</button>
-
-		<button
-			class="btn variant-filled-warning"
-			data-sveltekit-reload
-			on:click={() => {
-				$temp_data = slotsData_default_SlotInfos;
-				remove_localStorage_items_with_prefix('slotsData');
-			}}
-		>
-			Reset
-		</button>
-	</div>
-</div>
-
-<!-- <pre style="background: #eee">{JSON.stringify(data.value, null, 2)}</pre> -->
-<!-- <pre style="background: #eee">{JSON.stringify(aliasData_temp, null, 2)}</pre> -->
+<P5 {sketch} />
