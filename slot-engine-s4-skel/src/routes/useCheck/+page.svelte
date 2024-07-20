@@ -1,50 +1,61 @@
 <script lang="ts">
 	import P5, { type Sketch } from 'p5-svelte';
-	let width = 55;
-	let height = 55;
-	let x = 0;
+	import * as knobby from '@thenbe/svelte-knobby';
+	import type { Vector } from 'p5';
+	import type walker from './walker';
 
-	function velocityXY(p5: P5) {
-		let dx = p5.mouseX - p5.pmouseX;
-		let dy = p5.mouseY - p5.pmouseY;
-		p5.line(x, 25 + dx, x, 25 - dx);
-		p5.line(x, 75 + dy, x, 75 - dy);
-	}
+	let walker1: walker;
 
-	// General mouse velocity
-	function velocity(p5: Sketch['p5']) {
-		let distance = p5.dist(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY);
-		p5.line(x, p5.height / 2 + distance, x, p5.height / 2 - distance);
-	}
+	const opts = knobby.panel({
+		strokeWeight: { value: 20, min: 1, max: 20 },
+		speed: { value: 5, min: 1, max: 20 },
 
-	let sketch: Sketch = (p5) => {
-		p5.setup = () => {
+		setValues: () => {
+			walker1.size = $opts.strokeWeight;
+			walker1.speed = $opts.speed;
+
+			console.log(walker1.size);
+			console.log(walker1.speed);
+		}
+
+		//#region helpers
+		// // key value or function
+		// speed: { value: 1, min: 0.01, max: 10, step: 0.1 },
+		// clean: () => {
+		// 	console.log('doing');
+		// 	clean_canvas_out();
+		// }
+		//#endregion
+	});
+
+	const sketch: Sketch = async (p5) => {
+		// let walker = (await import('./walker')).default;
+		// walker1 = new walker({ x: 0, y: 0, size: $opts.strokeWeight });
+
+		let randomCounts: number[] = [];
+		let total = 20;
+		let barSize: number;
+
+		p5.setup = async () => {
+			// cnv = p5.createCanvas(400, 400);
+			// p5.createCanvas(400, 400);
+			p5.frameRate(60);
 			p5.createCanvas(400, 400);
+			p5.background('black');
+			for (let i = 0; i < total; i++) {
+				randomCounts[i] = 0;
+			}
+			barSize = p5.width / total;
 		};
 
 		p5.draw = () => {
-			p5.noStroke();
-			p5.fill(255, 10);
-			p5.rect(0, 0, p5.width, p5.height);
-			p5.stroke('red');
-			x = (x + 1) % p5.width;
-			// 0 ? velocity(p5) : velocityXY(p5);
-			0;
-			// p5.ellipse(p5.width / 2, p5.height / 2, width, height);
+			p5.fill(255);
+			for (let i = 0; i < total; i++) {
+				randomCounts[i] += p5.random();
+				p5.rect(i * barSize, p5.height, barSize, -randomCounts[i]);
+			}
 		};
 	};
 </script>
-
-<label>
-	Width
-	<input type="range" bind:value={width} min="100" max="1000" step="0.01" />
-	{width}
-</label>
-
-<label>
-	Height
-	<input type="range" bind:value={height} min="100" max="1000" step="0.01" />
-	{height}
-</label>
 
 <P5 {sketch} />
