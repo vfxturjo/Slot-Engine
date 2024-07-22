@@ -3,9 +3,11 @@
 	import * as knobby from '@thenbe/svelte-knobby';
 
 	import { onMount } from 'svelte';
-	import { linearSpace } from '$lib/_tj_world/constraints/linearSpace';
-	import { newbox } from '$lib/_tj_world/objects/box';
-	import { mouseAttractor } from '$lib/_tj_world/constraints/mouseAttract';
+	import { constraint_AxisLock } from '$lib/_tj_world/constraints/constraint_axisLock';
+	import { box } from '$lib/_tj_world/objects/box';
+	import { mouseAttractor } from '$lib/_tj_world/constraints/force_mouseAttract';
+	import { objectAttractorSingle } from '$lib/_tj_world/constraints/force_attract';
+	import { physicalObject } from '$lib/_tj_world/objects/physicalObject';
 
 	// sketch related variables
 	let sketchP5: P5;
@@ -13,26 +15,32 @@
 
 	// things in sketch
 	// constraints
-	let space1: linearSpace;
+	let axisConstraint1: constraint_AxisLock;
 	let mouseAttractor1: mouseAttractor;
+	let objectAttractorSingle1: objectAttractorSingle;
 
-	// onjects
-	let box1: newbox;
-	let box2: newbox;
+	// objects
+	let physicalObjects_list: physicalObject[] = [];
+	let box1: box;
+	let box2: box;
 
 	// sketch setup and draw function
 	const sketch1 = (p5: P5) => {
 		p5.setup = () => {
 			// Your setup function
 			p5.createCanvas(1000, 500);
-			p5.noStroke();
 		};
 
 		p5.draw = () => {
 			p5.background(0);
-			space1.show($opts.yLineLoc);
-			box1.follow(p5.mouseX, p5.mouseY);
-			box1.show();
+
+			axisConstraint1.show();
+			// mouseAttractor1.show();
+
+			physicalObjects_list.forEach((obj: physicalObject) => {
+				obj.step_physics();
+				obj.show();
+			});
 		};
 	};
 
@@ -52,18 +60,28 @@
 		sketchP5 = new p5(sketch1, anchorTag);
 		addEventHandlers();
 
-		space1 = new linearSpace(sketchP5);
-		space1.addXlock(10, 200);
+		axisConstraint1 = new constraint_AxisLock(sketchP5);
+		axisConstraint1.addXlock(10, sketchP5.width - 10);
+		axisConstraint1.addYlock(10, sketchP5.height - 10);
 
-		mouseAttractor1 = new mouseAttractor(sketchP5);
-
-		box1 = new newbox(sketchP5, 0, 0, 10);
+		// objects
+		box1 = new box(sketchP5, 0, 0, 30);
 		box1.color = 255;
 
-		box1.addLinearSpaceConstraint(space1);
+		box2 = new box(sketchP5, 100, 100, 30);
+		box2.color = 170;
 
-		box2 = new newbox(sketchP5, 0, 0, 10);
-		box2.color = 255;
+		physicalObjects_list.push(box1, box2);
+
+		// forces and constraints
+		mouseAttractor1 = new mouseAttractor(sketchP5);
+		objectAttractorSingle1 = new objectAttractorSingle(sketchP5, box1, -10, true);
+
+		box1.addLinearSpaceConstraint(axisConstraint1);
+		box1.addForceApplier(mouseAttractor1);
+
+		box2.addLinearSpaceConstraint(axisConstraint1);
+		box2.addForceApplier(objectAttractorSingle1);
 
 		// console.log(sketchP5);
 	});
@@ -74,8 +92,12 @@
 		min: { value: 10, min: 0, max: 1000, step: 1 },
 		max: { value: 10, min: 0, max: 1000, step: 1 },
 		updateRange: () => {
-			space1.xLock.min = $opts.min;
-			space1.xLock.max = $opts.max;
+			axisConstraint1.xLock.min = $opts.min;
+			axisConstraint1.xLock.max = $opts.max;
+		},
+		forceMultiplier: { value: 0.5, min: 0, max: 1, step: 0.01 },
+		updateForce: () => {
+			mouseAttractor1.forceMultiplier = $opts.forceMultiplier;
 		},
 		height: { value: 55, min: 100, max: 1000 },
 		speed: { value: 1, min: 0.01, max: 10, step: 0.1 },
@@ -86,7 +108,7 @@
 		},
 		addYconstraint: () => {},
 		logObjects: () => {
-			space1.logObjects();
+			axisConstraint1.logObjects();
 		}
 	});
 

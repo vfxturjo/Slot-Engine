@@ -1,10 +1,15 @@
 import type P5 from 'p5';
 import { forces_tj } from './base_Constraint_force';
+import type { physicalObject } from '../objects/physicalObject';
 
 export class mouseAttractor extends forces_tj {
 	forceMultiplier: number;
 
-	constructor(p5: P5, forceMultiplier = 0.1) {
+	/**
+	 * More information are to be added here.
+	 **/
+
+	constructor(p5: P5, forceMultiplier = 1) {
 		super(p5);
 		this.forceMultiplier = forceMultiplier;
 	}
@@ -20,15 +25,12 @@ export class mouseAttractor extends forces_tj {
 		}
 	}
 
-	apply() {
-		this.addedObjects.forEach((obj) => {
-			const force = this.p.createVector(0, 0);
-
-			force.x = this.p.mouseX - obj.position.x;
-			force.y = this.p.mouseY - obj.position.y;
-
-			obj.velocity.add(force.mult(this.forceMultiplier));
-			obj.position.add(obj.velocity);
-		});
+	applyForce(obj: physicalObject) {
+		return this.p
+			.createVector(
+				this.p.mouseX - obj.position.x, // x force
+				this.p.mouseY - obj.position.y // y force
+			)
+			.mult(this.forceMultiplier);
 	}
 }
