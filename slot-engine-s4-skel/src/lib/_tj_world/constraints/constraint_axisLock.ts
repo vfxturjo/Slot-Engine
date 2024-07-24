@@ -84,9 +84,9 @@ export class constraint_AxisLock extends constraints_tj {
 	}
 
 	// visual
-	show(centerLinePosPercnt = 0.5, startPercnt = 0, endPercnt = 1) {
+	show(centerLinePosPercnt = 0.5, startPercnt = 0, endPercnt = 1, color = 'orange') {
 		this.p.push();
-		this.p.stroke('orange');
+		this.p.stroke(color);
 
 		for (const lock of [this.xLock, this.yLock]) {
 			if (!lock.enabled) {

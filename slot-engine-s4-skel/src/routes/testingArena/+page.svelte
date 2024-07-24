@@ -8,6 +8,7 @@
 	import { mouseAttractor } from '$lib/_tj_world/constraints/force_mouseAttract';
 	import { objectAttractorSingle } from '$lib/_tj_world/constraints/force_attract';
 	import { physicalObject } from '$lib/_tj_world/objects/physicalObject';
+	import { constraint_mouseLock } from '$lib/_tj_world/constraints/constraint_mouseLock';
 
 	// sketch related variables
 	let sketchP5: P5;
@@ -15,14 +16,16 @@
 
 	// things in sketch
 	// constraints
-	let axisConstraint1: constraint_AxisLock;
-	let mouseAttractor1: mouseAttractor;
+	let axisConstraint1: constraint_AxisLock, axisConstraint2: constraint_AxisLock;
+	let mouseLock1: constraint_mouseLock;
 	let objectAttractorSingle1: objectAttractorSingle;
+	let objectAttractorSingle2: objectAttractorSingle;
 
 	// objects
 	let physicalObjects_list: physicalObject[] = [];
 	let box1: box;
 	let box2: box;
+	let box3: box;
 
 	// sketch setup and draw function
 	const sketch1 = (p5: P5) => {
@@ -33,8 +36,11 @@
 
 		p5.draw = () => {
 			p5.background(0);
-
+			mouseLock1.show();
 			axisConstraint1.show();
+			axisConstraint2.show(0.5, 0, 1, 'red');
+			// objectAttractorSingle1.show();
+
 			// mouseAttractor1.show();
 
 			physicalObjects_list.forEach((obj: physicalObject) => {
@@ -63,6 +69,9 @@
 		axisConstraint1 = new constraint_AxisLock(sketchP5);
 		axisConstraint1.addXlock(10, sketchP5.width - 10);
 		axisConstraint1.addYlock(10, sketchP5.height - 10);
+		axisConstraint2 = new constraint_AxisLock(sketchP5);
+		axisConstraint2.addXlock(20, sketchP5.width - 20);
+		axisConstraint2.addYlock(20, sketchP5.height - 20);
 
 		// objects
 		box1 = new box(sketchP5, 0, 0, 30);
@@ -71,17 +80,44 @@
 		box2 = new box(sketchP5, 100, 100, 30);
 		box2.color = 170;
 
-		physicalObjects_list.push(box1, box2);
+		box3 = new box(sketchP5, 100, 200, 30);
+		box3.color = 170;
+
+		physicalObjects_list.push(box1, box2, box3);
 
 		// forces and constraints
-		mouseAttractor1 = new mouseAttractor(sketchP5);
-		objectAttractorSingle1 = new objectAttractorSingle(sketchP5, box1, -10, true);
+		mouseLock1 = new constraint_mouseLock(sketchP5);
+		objectAttractorSingle1 = new objectAttractorSingle(
+			sketchP5,
+			box1,
+			1,
+			false,
+			false,
+			100,
+			1000,
+			1,
+			true
+		);
+		objectAttractorSingle2 = new objectAttractorSingle(
+			sketchP5,
+			box3,
+			1,
+			false,
+			false,
+			100,
+			1000,
+			1,
+			true
+		);
 
-		box1.addLinearSpaceConstraint(axisConstraint1);
-		box1.addForceApplier(mouseAttractor1);
+		box1.addSpaceConstraint(axisConstraint1);
+		box1.addConstraint(mouseLock1);
 
-		box2.addLinearSpaceConstraint(axisConstraint1);
+		box2.addConstraint(axisConstraint2);
 		box2.addForceApplier(objectAttractorSingle1);
+		box2.debugAppliedForces = true;
+
+		box2.addForceApplier(objectAttractorSingle2);
 
 		// console.log(sketchP5);
 	});
@@ -96,9 +132,7 @@
 			axisConstraint1.xLock.max = $opts.max;
 		},
 		forceMultiplier: { value: 0.5, min: 0, max: 1, step: 0.01 },
-		updateForce: () => {
-			mouseAttractor1.forceMultiplier = $opts.forceMultiplier;
-		},
+		updateForce: () => {},
 		height: { value: 55, min: 100, max: 1000 },
 		speed: { value: 1, min: 0.01, max: 10, step: 0.1 },
 		color: '#ff3e00',

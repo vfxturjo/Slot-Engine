@@ -1,7 +1,7 @@
 import type P5 from 'p5';
 import { removeFromList } from '../utils';
 import { constraint_AxisLock } from '../constraints/constraint_axisLock';
-import type { forces_tj } from '../constraints/base_Constraint_force';
+import type { constraints_tj, forces_tj } from '../constraints/base_Constraint_force';
 
 export class physicalObject {
 	p: P5;
@@ -14,9 +14,12 @@ export class physicalObject {
 	forceMultiplier = 1;
 	velocityDamping: number = 0.5; // from 0 to 1, 0.5 < is bouncy, 0.5 > is smooth
 
-	constraintsList: constraint_AxisLock[] = [];
+	constraintsList: constraints_tj[] = [];
+	constraintsList_upper: constraint_AxisLock[] = [];
 	forceApplierList: forces_tj[] = [];
 
+	// debug
+	debugAppliedForces = false;
 	/**
 	 * More information are to be added here.
 	 **/
@@ -42,16 +45,27 @@ export class physicalObject {
 	}
 
 	//#region adding and removing constraints and forceAppliers
-	addLinearSpaceConstraint(linearSpaceConstraint: constraint_AxisLock) {
-		this.constraintsList.push(linearSpaceConstraint);
-		linearSpaceConstraint.addObject(this);
+	addConstraint(constraint: constraints_tj) {
+		this.constraintsList.push(constraint);
+		constraint.addObject(this);
 	}
 
-	removeLinearSpaceConstraint(linearSpaceConstraint: constraint_AxisLock) {
-		this.constraintsList = removeFromList(linearSpaceConstraint, this.constraintsList);
-		linearSpaceConstraint.removeObject(this);
+	removeConstraint(constraint: constraints_tj) {
+		this.constraintsList = removeFromList(constraint, this.constraintsList);
+		constraint.removeObject(this);
 	}
 
+	// these are highest level constraints. applied at last
+	addSpaceConstraint(constraint: constraint_AxisLock) {
+		this.constraintsList_upper.push(constraint);
+		constraint.addObject(this);
+	}
+	removeSpaceConstraint(constraint: constraint_AxisLock) {
+		this.constraintsList_upper = removeFromList(constraint, this.constraintsList_upper);
+		constraint.removeObject(this);
+	}
+
+	// forces
 	addForceApplier(forceApplier: forces_tj) {
 		this.forceApplierList.push(forceApplier);
 		forceApplier.addObject(this);
@@ -80,16 +94,34 @@ export class physicalObject {
 	}
 
 	step_physics() {
-		this.forceApplierList.forEach((forceApplier) => {
+		this.forceApplierList.forEach((forceApplier, index) => {
 			// accumulate force from the forAppliers
 			this.force.add(forceApplier.applyForce(this));
+
+			// draw text if
+			if (this.debugAppliedForces) {
+				this.p.push();
+				this.p.noStroke();
+				this.p.fill('white');
+				this.p.text(
+					`${index}: ${this.force.x.toFixed(3)} ${this.force.x.toFixed(3)}`,
+					100,
+					100 + index * 10
+				);
+				this.p.pop();
+			}
 		});
 
 		// apply the accumulated force
 		this.applyForcePhysics();
 
-		// finally apply the constraints
+		// apply the constraints
 		this.constraintsList.forEach((constraint) => {
+			constraint.apply_this(this);
+		});
+
+		// finally apply the highest level constraints
+		this.constraintsList_upper.forEach((constraint) => {
 			constraint.apply_this(this);
 		});
 	}
